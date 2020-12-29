@@ -11,16 +11,18 @@ import scipy
 from scipy.linalg.blas import dtrsm
 
 
-def _row_count(A):
+def _row_count(A, tol=1e-13):
     """
     Counts the number of nonzeros in each row of input array A.
     Nonzeros are defined as any element with absolute value greater than
-    tol = 1e-13. This value should probably be an input to the function.
+    tol.
 
     Parameters
     ----------
     A : 2-D array
         An array representing a matrix
+    tol : float
+        Minimum value required for an element to be considered non-zero
 
     Returns
     -------
@@ -28,11 +30,10 @@ def _row_count(A):
         Number of nonzeros in each row of A
 
     """
-    tol = 1e-13
     return np.array((abs(A) > tol).sum(axis=1)).flatten()
 
 
-def _get_densest(A, eligibleRows):
+def _get_densest(A, eligibleRows, tol=1e-13):
     """
     Returns the index of the densest row of A. Ignores rows that are not
     eligible for consideration.
@@ -44,6 +45,8 @@ def _get_densest(A, eligibleRows):
     eligibleRows : 1-D logical array
         Values indicate whether the corresponding row of A is eligible
         to be considered
+    tol : float
+        Minimum value required for an element to be considered non-zero
 
     Returns
     -------
@@ -51,11 +54,11 @@ def _get_densest(A, eligibleRows):
         Index of the densest row in A eligible for consideration
 
     """
-    rowCounts = _row_count(A)
+    rowCounts = _row_count(A, tol=tol)
     return np.argmax(rowCounts * eligibleRows)
 
 
-def _remove_zero_rows(A, b):
+def _remove_zero_rows(A, b, tol=1e-13):
     """
     Eliminates trivial equations from system of equations defined by Ax = b
    and identifies trivial infeasibilities
@@ -66,6 +69,8 @@ def _remove_zero_rows(A, b):
         An array representing the left-hand side of a system of equations
     b : 1-D array
         An array representing the right-hand side of a system of equations
+    tol : float
+        Minimum value required for an element to be considered non-zero
 
     Returns
     -------
@@ -83,7 +88,7 @@ def _remove_zero_rows(A, b):
     """
     status = 0
     message = ""
-    i_zero = _row_count(A) == 0
+    i_zero = _row_count(A, tol=tol) == 0
     A = A[np.logical_not(i_zero), :]
     if not(np.allclose(b[i_zero], 0)):
         status = 2
